@@ -1,0 +1,8 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:key="@string/pref_key_todo_file"
+        android:title="@string/pref_title_todo_file"
+        android:defaultValue="todo.txt" />
+
+</PreferenceScreen>

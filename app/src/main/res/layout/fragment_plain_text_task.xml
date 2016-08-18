@@ -1,0 +1,28 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.PlainTextTaskFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <de.lenidh.texttasks.android.ui.widgets.SingleLineEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/editor"
+            android:gravity="start"
+            android:background="@android:color/transparent"
+            android:text="Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. Eines Tages kam ein fremder Mann in die Stadt. Die Bewohner waren zuerst misstrauisch. "
+            android:singleLine="false"
+            android:inputType="text|textMultiLine"
+            android:imeOptions="actionNone"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp" />
+
+    </ScrollView>
+
+</FrameLayout>
