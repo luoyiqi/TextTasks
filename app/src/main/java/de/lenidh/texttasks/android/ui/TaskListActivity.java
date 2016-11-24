@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.view.ActionMode;
+import android.view.Menu;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -21,7 +23,9 @@ import de.lenidh.texttasks.android.core.Task;
 
 public class TaskListActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
-        TaskListFragment.OnInteractionListener {
+        TaskListFragment.Host {
+
+    private ActionMode actionMode = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,5 +116,42 @@ public class TaskListActivity extends AppCompatActivity
         Intent editTaskIntent = new Intent(this, TaskActivity.class);
         editTaskIntent.putExtra(TaskActivity.ARG_TASK_INDEX, index);
         startActivity(editTaskIntent);
+    }
+
+    @Override
+    public ActionMode startActionMode(final ActionMode.Callback callback) {
+        if(actionMode != null) return null;
+        actionMode = startSupportActionMode(new ActionModeCallback(callback));
+        return actionMode;
+    }
+
+    private class ActionModeCallback implements ActionMode.Callback {
+
+        private final ActionMode.Callback wrappee;
+
+        public ActionModeCallback(ActionMode.Callback callback) {
+            wrappee = callback;
+        }
+
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            return wrappee.onCreateActionMode(mode, menu);
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return wrappee.onPrepareActionMode(mode, menu);
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            return wrappee.onActionItemClicked(mode, item);
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            wrappee.onDestroyActionMode(mode);
+            actionMode = null;
+        }
     }
 }

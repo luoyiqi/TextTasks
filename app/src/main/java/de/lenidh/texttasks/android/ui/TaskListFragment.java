@@ -6,10 +6,14 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
+import android.support.v7.view.ActionMode;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -27,7 +31,7 @@ import de.lenidh.texttasks.android.core.TaskMapper;
 /**
  * A fragment representing a list of Items.
  * <p/>
- * Activities containing this fragment MUST implement the {@link OnInteractionListener}
+ * Activities containing this fragment MUST implement the {@link Host}
  * interface.
  */
 public class TaskListFragment extends Fragment {
@@ -36,12 +40,15 @@ public class TaskListFragment extends Fragment {
 
     private static final String ARG_FILE = "file";
 
-    private EditText newTaskEditor;
+    private final ActionModeCallbacks actionModeCallbacks = new ActionModeCallbacks();
 
-    private OnInteractionListener listener;
+    private EditText newTaskEditor;
+    private ActionMode actionMode;
+
+    private Host host;
 
     private TaskMapper file;
-    private final TaskListItemAdapter adapter = new TaskListItemAdapter(this);
+    private final TaskListAdapter adapter = new TaskListAdapter(new AdapterListener());
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -87,7 +94,7 @@ public class TaskListFragment extends Fragment {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if(actionId == EditorInfo.IME_ACTION_DONE || ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER) && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    onAddTask();
+                    addTask();
                     return true;
                 }
                 return false;
@@ -117,8 +124,8 @@ public class TaskListFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof OnInteractionListener) {
-            listener = (OnInteractionListener) context;
+        if (context instanceof Host) {
+            host = (Host) context;
         } else {
             throw new RuntimeException(context.toString()
                     + " must implement OnInteractionListener");
@@ -128,14 +135,10 @@ public class TaskListFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        listener = null;
+        host = null;
     }
 
-    public void onTaskClick(int position, Task task) {
-        this.listener.onTaskClick(position, task);
-    }
-
-    public void onAddTask() {
+    private void addTask() {
         String taskStr = this.newTaskEditor.getText().toString();
         if(!"".equals(taskStr)) {
             Task newTask = new Task(taskStr);
@@ -144,16 +147,13 @@ public class TaskListFragment extends Fragment {
         }
     }
 
-    public void onTaskCompleteAction(int position, Task task) {
-        task.complete();
-        adapter.notifyItemChanged(position);
-        this.file.update(position, task);
-    }
-
-    public void onTaskScheduleAction(int position, Task task) {
-        task.schedule();
-        adapter.notifyItemChanged(position);
-        this.file.update(position, task);
+    private void deleteSelectedTasks() {
+        List<Integer> selectedTasks = adapter.getSelectedItems();
+        for(int i = selectedTasks.size() - 1; i >= 0; i--) {
+            file.delete(selectedTasks.get(i));
+        }
+        adapter.clearSelections();
+        actionMode.finish();
     }
 
     /**
@@ -166,8 +166,9 @@ public class TaskListFragment extends Fragment {
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-    public interface OnInteractionListener {
+    public interface Host {
         void onTaskClick(int position, Task item);
+        ActionMode startActionMode(ActionMode.Callback callback);
     }
 
     private class TaskListLoaderCallbacks implements LoaderManager.LoaderCallbacks<List<Task>> {
@@ -185,6 +186,69 @@ public class TaskListFragment extends Fragment {
         @Override
         public void onLoaderReset(Loader<List<Task>> loader) {
             adapter.updateData(null);
+        }
+    }
+
+    private class AdapterListener implements TaskListAdapter.Listener {
+
+        @Override
+        public void onTaskClick(int position, Task task) {
+            host.onTaskClick(position, task);
+        }
+
+        @Override
+        public void onTaskCompleteAction(int position, Task task) {
+            task.complete();
+            adapter.notifyItemChanged(position);
+            file.update(position, task);
+        }
+
+        @Override
+        public void onTaskScheduleAction(int position, Task task) {
+            task.schedule();
+            adapter.notifyItemChanged(position);
+            file.update(position, task);
+        }
+
+        @Override
+        public void onTaskSelectionChanged() {
+            int selectedItemCount = adapter.getSelectedItemCount();
+            if(selectedItemCount > 0 && actionMode == null) {
+                actionMode = host.startActionMode(actionModeCallbacks);
+            } else if(selectedItemCount == 0 && actionMode != null) {
+                actionMode.finish();
+            }
+        }
+    }
+
+    private class ActionModeCallbacks implements ActionMode.Callback {
+
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.task_context_menu, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.action_delete:
+                    deleteSelectedTasks();
+                    return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            adapter.clearSelections();
+            actionMode = null;
         }
     }
 }

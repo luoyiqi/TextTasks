@@ -2,6 +2,7 @@ package de.lenidh.texttasks.android.ui;
 
 import android.graphics.Paint;
 import android.support.v7.widget.RecyclerView;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,21 +12,21 @@ import android.widget.TextView;
 
 import de.lenidh.texttasks.android.R;
 import de.lenidh.texttasks.android.core.Task;
-import de.lenidh.texttasks.android.ui.TaskListFragment.OnInteractionListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * {@link RecyclerView.Adapter} that can display a {@link Task} and makes a call to the specified
- * {@link OnInteractionListener}.
+ * {@link RecyclerView.Adapter} that provides views for a list of {@link Task}s.
  */
-public class TaskListItemAdapter extends RecyclerView.Adapter<TaskListItemAdapter.ViewHolder> {
+public class TaskListAdapter extends RecyclerView.Adapter<TaskListAdapter.ViewHolder> {
 
     private final List<Task> values = new ArrayList<>();
-    private final TaskListFragment listener;
+    private final TaskListAdapter.Listener listener;
+    private final SparseBooleanArray selectedItems = new SparseBooleanArray();
 
-    public TaskListItemAdapter(TaskListFragment listener) {
+    public TaskListAdapter(TaskListAdapter.Listener listener) {
+        if(listener == null) throw new NullPointerException("listener must not be null");
         this.listener = listener;
     }
 
@@ -40,6 +41,7 @@ public class TaskListItemAdapter extends RecyclerView.Adapter<TaskListItemAdapte
     public void onBindViewHolder(final ViewHolder holder, int position) {
 
         holder.item = values.get(position);
+        holder.view.setSelected(selectedItems.get(position));
         holder.textView.setText(holder.item.getText());
         if(holder.item.getDueDate() == null) {
             holder.dueView.setText("");
@@ -67,7 +69,39 @@ public class TaskListItemAdapter extends RecyclerView.Adapter<TaskListItemAdapte
         this.values.clear();
         this.values.addAll(tasks);
         this.notifyDataSetChanged();
-        // FIXME:
+    }
+
+    private boolean toggleSelection(int position, boolean notify) {
+        boolean newState;
+        if(selectedItems.get(position)) {
+            newState = false;
+            selectedItems.delete(position);
+        } else {
+            newState = true;
+            selectedItems.put(position, true);
+        }
+        if (notify) {
+            notifyItemChanged(position);
+            listener.onTaskSelectionChanged();
+        }
+        return newState;
+    }
+
+    public void clearSelections() {
+        selectedItems.clear();
+        notifyDataSetChanged();
+    }
+
+    public int getSelectedItemCount() {
+        return selectedItems.size();
+    }
+
+    public List<Integer> getSelectedItems() {
+        List<Integer> result = new ArrayList<>(selectedItems.size());
+        for(int i = 0; i < selectedItems.size(); i++) {
+            result.add(selectedItems.keyAt(i));
+        }
+        return result;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -82,6 +116,7 @@ public class TaskListItemAdapter extends RecyclerView.Adapter<TaskListItemAdapte
 
             this.view = view;
             this.view.setOnClickListener(onClickListener);
+            this.view.setOnLongClickListener(onLongClickListener);
 
             this.textView = (TextView) view.findViewById(R.id.text);
 
@@ -106,9 +141,23 @@ public class TaskListItemAdapter extends RecyclerView.Adapter<TaskListItemAdapte
         private View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (null != listener) {
+                if(selectedItems.size() > 0) {
+                    boolean selected = toggleSelection(getAdapterPosition(), false);
+                    v.setSelected(selected);
+                    listener.onTaskSelectionChanged();
+                } else {
                     listener.onTaskClick(getAdapterPosition(), item);
                 }
+            }
+        };
+
+        private View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                boolean selected = toggleSelection(getAdapterPosition(), false);
+                v.setSelected(selected);
+                listener.onTaskSelectionChanged();
+                return true;
             }
         };
 
@@ -122,5 +171,12 @@ public class TaskListItemAdapter extends RecyclerView.Adapter<TaskListItemAdapte
                 }
             }
         };
+    }
+
+    public interface Listener {
+        void onTaskClick(int position, Task task);
+        void onTaskCompleteAction(int position, Task task);
+        void onTaskScheduleAction(int position, Task task);
+        void onTaskSelectionChanged();
     }
 }
