@@ -21,6 +21,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 import de.lenidh.texttasks.android.R;
@@ -185,7 +186,7 @@ public class TaskListFragment extends Fragment {
 
         @Override
         public void onLoaderReset(Loader<List<Task>> loader) {
-            adapter.updateData(null);
+            adapter.updateData(Collections.<Task>emptyList());
         }
     }
 
